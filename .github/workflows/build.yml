@@ -37,7 +37,7 @@ jobs:
 
     - name: Build for Termux (32-bit ARM)
       env:
-        GOOS: linux
+        GOOS: android
         GOARCH: arm
         GOARM: 7
       run: |
