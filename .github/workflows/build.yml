@@ -22,7 +22,7 @@ jobs:
     # 这次 if 后面绝对加上空格了！！！
     - name: Init Go Module
       run: |
-        if[ ! -f go.mod ]; then
+        if [ ! -f go.mod ]; then
           go mod init ollama-proxy
         fi
         go mod tidy
