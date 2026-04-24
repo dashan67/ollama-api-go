@@ -19,12 +19,9 @@ jobs:
       with:
         go-version: '1.22.x'
 
-    # 这次 if 后面绝对加上空格了！！！
     - name: Init Go Module
       run: |
-        if [ ! -f go.mod ]; then
-          go mod init ollama-proxy
-        fi
+        test -f go.mod || go mod init ollama-proxy
         go mod tidy
 
     - name: Build for Windows 11 (AMD64)
@@ -35,13 +32,19 @@ jobs:
         mkdir -p build/windows
         go build -o build/windows/ollama-proxy.exe main.go
 
-    - name: Build for Termux (32-bit ARM)
+    # 真正的安卓目标编译方案！
+    - name: Build for Termux (Android 9, 32-bit ARM)
       env:
         GOOS: android
         GOARCH: arm
         GOARM: 7
+        CGO_ENABLED: 1 # 必须开启 CGO
       run: |
         mkdir -p build/termux
+        # 利用 GitHub Actions 预装的 Android NDK 路径 ($ANDROID_NDK_HOME)
+        # Android 9 的底层对应的是 API Level 28，调用对应的 clang 编译器
+        export CC=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi28-clang
+        # 执行编译
         go build -o build/termux/ollama-proxy main.go
 
     - name: Upload Windows Artifact
