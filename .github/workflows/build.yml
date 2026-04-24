@@ -1,0 +1,64 @@
+name: Build Go Executables
+
+# 触发条件：当你推送到 main 分支，或者在网页上手动点击运行时触发
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build binaries
+    runs-on: ubuntu-latest # 使用最新的 Ubuntu 作为编译环境，速度最快
+
+    steps:
+    # 1. 拉取你的仓库代码
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # 2. 配置 Go 语言环境
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22.x' # 使用稳定的 Go 版本
+
+    # 3. 初始化 Go 模块（因为你只有一个 main.go 文件，Go 现代版本需要 go.mod）
+    - name: Init Go Module
+      run: |
+        if[ ! -f go.mod ]; then
+          go mod init ollama-proxy
+        fi
+        go mod tidy
+
+    # 4. 编译 Windows 11 (64位 AMD64) 版本
+    - name: Build for Windows 11 (AMD64)
+      env:
+        GOOS: windows
+        GOARCH: amd64
+      run: |
+        mkdir -p build/windows
+        go build -o build/windows/ollama-proxy.exe main.go
+
+    # 5. 编译 Android 9 Termux (32位 ARM) 版本
+    - name: Build for Termux (32-bit ARM)
+      env:
+        GOOS: linux
+        GOARCH: arm
+        GOARM: 7
+      run: |
+        mkdir -p build/termux
+        go build -o build/termux/ollama-proxy main.go
+
+    # 6. 上传 Windows 编译结果，供你在网页下载
+    - name: Upload Windows Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Windows-11-AMD64-exe
+        path: build/windows/ollama-proxy.exe
+
+    # 7. 上传 Termux 编译结果，供你在网页下载
+    - name: Upload Termux Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Termux-Android9-ARM32
+        path: build/termux/ollama-proxy
